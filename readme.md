@@ -7,9 +7,8 @@
 必用 python 32 bit 因為 USBIO4.dll 是 32 bit
 
 USB I/O 硬體介面卡為︰技術士技能檢定電腦硬體裝修職類乙級術科測試應檢參考資料 12000-102201~210 版本
-![A](./images/USBIO_board_As.png)
-![B](./images/USBIO_board_Bs.png)
-
+![A](./images/USBIO_board_A_finish_s.png)
+![B](./images/USBIO_board_B_finish_s.png)
 ## 主要功能
 
 *   **現代化 UI 介面**：使用 `customtkinter` 函式庫，提供支援 Windows 11 風格的深色/淺色主題、圓角按鈕和動態懸停效果。
