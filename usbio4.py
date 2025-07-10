@@ -1,7 +1,3 @@
-# 程式碼由 2025/06/20 Google AI Studio 生成
-# USB I/O board : 電腦硬體裝修乙級術科第一題套件 2023/09/01 12000-102201~210 版本
-# 必用 python 32 bit 因為 USBIO4.dll 是 32 bit
-
 import tkinter as tk
 from tkinter import messagebox
 import sys
@@ -75,7 +71,6 @@ class LedControlApp:
         self.marquee_running = False
         self.marquee_pos = 0
         self.marquee_dir = 1
-        # --- 不再需要備份狀態，但保留變數以防未來需要 ---
         self.led_states_before_marquee = []
 
         self.after_id_poll = None
@@ -85,30 +80,41 @@ class LedControlApp:
         self.poll_hardware_status()
 
     def setup_ui(self):
-        self.root.title("USB I/O LED 控制器")
+        """設定所有 UI 元件 (使用全域 Grid 佈局)"""
+        self.root.title("USB I/O LED 控制器 (v5.2 佈局修正版)")
         self.root.geometry(f"{config.WINDOW_DEFAULT_WIDTH}x{config.WINDOW_DEFAULT_HEIGHT}")
         self.root.resizable(True, True)
 
-        status_frame = ctk.CTkFrame(self.root, fg_color="transparent")
-        status_frame.pack(fill=tk.X, padx=10, pady=5)
-        self.status_label = ctk.CTkLabel(status_frame, text="初始化...   請接上USB I/O 板...",
-                                         font=ctk.CTkFont(family="Microsoft JhengHei", size=14, weight="bold"))
-        self.status_label.pack(side=tk.LEFT)
+        # --- 全域 Grid 佈局設定 ---
+        self.root.grid_rowconfigure(0, weight=0)  # 狀態列，高度固定
+        self.root.grid_rowconfigure(1, weight=1)  # LED 按鈕框架，佔用所有多餘的垂直空間
+        self.root.grid_rowconfigure(2, weight=0)  # 功能按鈕框架，高度固定
+        self.root.grid_columnconfigure(0, weight=1)  # 單一欄，佔用所有水平空間
 
+        # --- 頂部狀態列 ---
+        status_frame = ctk.CTkFrame(self.root, fg_color="transparent")
+        status_frame.grid(row=0, column=0, sticky="ew", padx=10, pady=(5, 0))
+        self.status_label = ctk.CTkLabel(status_frame, text="初始化...",
+                                         font=ctk.CTkFont(family="Microsoft JhengHei", size=14, weight="bold"))
+        self.status_label.pack(side=tk.LEFT)  # 內部用 pack 沒問題
+
+        # --- LED 按鈕主框架 ---
         self.led_frame = ctk.CTkFrame(self.root, fg_color="transparent")
-        self.led_frame.pack(fill="both", expand=True, padx=10, pady=5)
+        self.led_frame.grid(row=1, column=0, sticky="nsew", padx=10, pady=5)
         self.create_led_buttons()
 
-        func_frame = ctk.CTkFrame(self.root, fg_color="transparent")
-        func_frame.pack(fill=tk.X, pady=(5, 10), padx=10)
-        self.create_function_buttons(func_frame)
+        # --- 底部功能按鈕框架 ---
+        self.func_frame = ctk.CTkFrame(self.root, fg_color="transparent")
+        self.func_frame.grid(row=2, column=0, sticky="ew", padx=10, pady=(5, 10))
+        self.create_function_buttons()
 
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
 
     def create_led_buttons(self):
         self.buttons = []
         for i in range(config.NUM_LEDS):
-            button = ctk.CTkButton(self.led_frame, text=f"LED {i + 1}",
+            #button = ctk.CTkButton(self.led_frame, text=f"LED {i + 1}",
+            button = ctk.CTkButton(self.led_frame, text=f"{i + 1}",
                                    command=lambda index=i: self.toggle_led(index),
                                    corner_radius=8, font=ctk.CTkFont(weight="bold"))
             row, col = i // 8, 7 - (i % 8)
@@ -120,17 +126,24 @@ class LedControlApp:
         self.update_gui_from_states()
         self.disable_buttons(self.buttons)
 
-    def create_function_buttons(self, parent_frame):
+    def create_function_buttons(self):
         self.func_buttons = []
         btn_config = {"fg_color": config.COLOR_BUTTON_FUNC, "hover_color": config.COLOR_BUTTON_FUNC_HOVER,
                       "text_color": config.COLOR_BUTTON_FUNC_TEXT, "corner_radius": 8,
                       "font": ctk.CTkFont(family="Microsoft JhengHei", weight="bold")}
-        btn_all_on = ctk.CTkButton(parent_frame, text="全部開啟", **btn_config, command=self.all_on)
-        btn_all_off = ctk.CTkButton(parent_frame, text="全部關閉", **btn_config, command=self.all_off)
-        btn_invert = ctk.CTkButton(parent_frame, text="反向", **btn_config, command=self.invert_state)
-        self.btn_marquee = ctk.CTkButton(parent_frame, text="跑馬燈", **btn_config, command=self.toggle_marquee)
+
+        # 讓功能按鈕也使用 grid 佈局
+        btn_all_on = ctk.CTkButton(self.func_frame, text="全部開啟", **btn_config, command=self.all_on)
+        btn_all_off = ctk.CTkButton(self.func_frame, text="全部關閉", **btn_config, command=self.all_off)
+        btn_invert = ctk.CTkButton(self.func_frame, text="反向", **btn_config, command=self.invert_state)
+        self.btn_marquee = ctk.CTkButton(self.func_frame, text="跑馬燈", **btn_config, command=self.toggle_marquee)
+
         self.func_buttons = [btn_all_on, btn_all_off, btn_invert, self.btn_marquee]
-        for btn in self.func_buttons: btn.pack(side=tk.LEFT, padx=5, expand=True, fill=tk.X)
+
+        for i, btn in enumerate(self.func_buttons):
+            self.func_frame.grid_columnconfigure(i, weight=1)  # 讓每個按鈕平分寬度
+            btn.grid(row=0, column=i, padx=5, sticky="ew")
+
         self.disable_buttons(self.func_buttons)
 
     def poll_hardware_status(self):
@@ -149,10 +162,8 @@ class LedControlApp:
             self.is_first_connection = False
         else:
             if self.marquee_running:
-                print("重新連接，恢復跑馬燈...")
                 self.run_marquee_frame()
             else:
-                print("重新連接，恢復一般狀態...")
                 self.restore_led_state()
 
     def handle_disconnection(self):
@@ -161,6 +172,7 @@ class LedControlApp:
         if self.after_id_marquee:
             self.root.after_cancel(self.after_id_marquee)
             self.after_id_marquee = None
+        self.is_first_connection = True
         self.hardware.disconnect()
         self.disable_buttons(self.buttons + self.func_buttons)
         self.status_label.configure(text="硬體已中斷，正在嘗試重連...", text_color="orange")
@@ -219,10 +231,9 @@ class LedControlApp:
 
     def start_marquee(self):
         print("啟動跑馬燈")
-        # 不需要備份了，因為我們就是要凍結
-        # self.led_states_before_marquee = self.led_states.copy()
+        self.led_states_before_marquee = self.led_states.copy()
         self.marquee_running = True
-        self.btn_marquee.configure(text="停止跑馬燈", fg_color=config.COLOR_MARQUEE_STOP,
+        self.btn_marquee.configure(text="停止跑馬", fg_color=config.COLOR_MARQUEE_STOP,
                                    hover_color=config.COLOR_MARQUEE_STOP_HOVER)
         self.marquee_pos = 0;
         self.marquee_dir = 1
@@ -231,31 +242,23 @@ class LedControlApp:
 
     def stop_marquee(self):
         if not self.marquee_running: return
-        print("停止跑馬燈")
-
-        # --- 核心修改 ---
-        # 1. 停止動畫循環
+        print("停止跑馬")
         self.marquee_running = False
         if self.after_id_marquee:
             self.root.after_cancel(self.after_id_marquee)
             self.after_id_marquee = None
 
-        # 2. 恢復按鈕功能和外觀
-        self.btn_marquee.configure(text="跑馬燈", fg_color=config.COLOR_BUTTON_FUNC,
-                                   hover_color=config.COLOR_BUTTON_FUNC_HOVER)
-        self.enable_buttons(self.buttons + self.func_buttons)
-
-        # 3. 將內部的 led_states 更新為跑馬燈的最後一幀狀態
-        #    這樣後續的操作（如斷線重連）就會基於這個凍結的狀態
         last_states = [False] * config.NUM_LEDS
-        # marquee_pos 已經移動到下一個位置，所以要減回去
         last_pos = self.marquee_pos - self.marquee_dir
         if 0 <= last_pos < config.NUM_LEDS:
             last_states[last_pos] = True
         self.led_states = last_states
         print(f"跑馬燈凍結在狀態: {self.led_states}")
 
-        # 4. 不再從備份恢復，因為就是要停在當下
+        self.btn_marquee.configure(text="跑馬燈", fg_color=config.COLOR_BUTTON_FUNC,
+                                   hover_color=config.COLOR_BUTTON_FUNC_HOVER)
+        self.enable_buttons(self.buttons + self.func_buttons)
+        self.update_gui_from_states()
 
     def run_marquee_frame(self):
         if not self.marquee_running or not self.hardware.is_connected(): return
