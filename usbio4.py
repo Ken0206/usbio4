@@ -1,15 +1,49 @@
 import tkinter as tk
 from tkinter import messagebox
 import sys
-import config  # 導入美化版的設定檔
-import customtkinter as ctk  # 導入 customtkinter
+import config
+import customtkinter as ctk
 
 try:
     import win32com.client
     import pywintypes
+    # 導入實現單例應用所需的核心模組
+    import win32event
+    import win32api
+    import winerror
 except ImportError:
     messagebox.showerror("缺少函式庫", "找不到 'pywin32' 函式庫。\n請執行 'pip install pywin32' 來安裝。")
     sys.exit()
+
+
+# =============================================================================
+# 0. 短暫通知視窗 (Toast Notification)
+#    一個無邊框、會自動消失的 Toplevel 視窗。
+# =============================================================================
+class ToastNotification(ctk.CTkToplevel):
+    def __init__(self, message):
+        super().__init__()
+
+        # 隱藏視窗邊框和標題列
+        self.overrideredirect(True)
+        self.attributes("-topmost", True)  # 確保在最上層顯示
+
+        # 設定外觀
+        self.configure(fg_color="#333333")
+        label = ctk.CTkLabel(self, text=message, font=ctk.CTkFont(family="Microsoft JhengHei", size=14),
+                             padx=20, pady=10)
+        label.pack()
+
+        # 計算並置中於螢幕
+        self.update_idletasks()
+        screen_width = self.winfo_screenwidth()
+        screen_height = self.winfo_screenheight()
+        x = (screen_width // 2) - (self.winfo_width() // 2)
+        y = (screen_height // 2) - (self.winfo_height() // 2)
+        self.geometry(f"+{x}+{y}")
+
+        # 3秒後自動銷毀自己和父視窗（Tk()）
+        self.after(3000, self.master.destroy)
 
 
 # =============================================================================
@@ -59,7 +93,7 @@ class HardwareController:
 
 
 # =============================================================================
-# 2. UI 主應用程式 (LedControlApp Class)
+# 2. UI 主應用程式 (LedControlApp Class) (維持不變)
 # =============================================================================
 class LedControlApp:
     def __init__(self, root):
@@ -80,30 +114,25 @@ class LedControlApp:
         self.poll_hardware_status()
 
     def setup_ui(self):
-        """設定所有 UI 元件 (使用全域 Grid 佈局)"""
-        self.root.title("USB I/O LED 控制器 (v5.2 佈局修正版)")
+        self.root.title("USB I/O LED 控制器 (v1.2)")
         self.root.geometry(f"{config.WINDOW_DEFAULT_WIDTH}x{config.WINDOW_DEFAULT_HEIGHT}")
         self.root.resizable(True, True)
 
-        # --- 全域 Grid 佈局設定 ---
-        self.root.grid_rowconfigure(0, weight=0)  # 狀態列，高度固定
-        self.root.grid_rowconfigure(1, weight=1)  # LED 按鈕框架，佔用所有多餘的垂直空間
-        self.root.grid_rowconfigure(2, weight=0)  # 功能按鈕框架，高度固定
-        self.root.grid_columnconfigure(0, weight=1)  # 單一欄，佔用所有水平空間
+        self.root.grid_rowconfigure(0, weight=0)
+        self.root.grid_rowconfigure(1, weight=1)
+        self.root.grid_rowconfigure(2, weight=0)
+        self.root.grid_columnconfigure(0, weight=1)
 
-        # --- 頂部狀態列 ---
         status_frame = ctk.CTkFrame(self.root, fg_color="transparent")
         status_frame.grid(row=0, column=0, sticky="ew", padx=10, pady=(5, 0))
         self.status_label = ctk.CTkLabel(status_frame, text="初始化...",
                                          font=ctk.CTkFont(family="Microsoft JhengHei", size=14, weight="bold"))
-        self.status_label.pack(side=tk.LEFT)  # 內部用 pack 沒問題
+        self.status_label.pack(side=tk.LEFT)
 
-        # --- LED 按鈕主框架 ---
         self.led_frame = ctk.CTkFrame(self.root, fg_color="transparent")
         self.led_frame.grid(row=1, column=0, sticky="nsew", padx=10, pady=5)
         self.create_led_buttons()
 
-        # --- 底部功能按鈕框架 ---
         self.func_frame = ctk.CTkFrame(self.root, fg_color="transparent")
         self.func_frame.grid(row=2, column=0, sticky="ew", padx=10, pady=(5, 10))
         self.create_function_buttons()
@@ -131,19 +160,14 @@ class LedControlApp:
         btn_config = {"fg_color": config.COLOR_BUTTON_FUNC, "hover_color": config.COLOR_BUTTON_FUNC_HOVER,
                       "text_color": config.COLOR_BUTTON_FUNC_TEXT, "corner_radius": 8,
                       "font": ctk.CTkFont(family="Microsoft JhengHei", weight="bold")}
-
-        # 讓功能按鈕也使用 grid 佈局
         btn_all_on = ctk.CTkButton(self.func_frame, text="全部開啟", **btn_config, command=self.all_on)
         btn_all_off = ctk.CTkButton(self.func_frame, text="全部關閉", **btn_config, command=self.all_off)
         btn_invert = ctk.CTkButton(self.func_frame, text="反向", **btn_config, command=self.invert_state)
         self.btn_marquee = ctk.CTkButton(self.func_frame, text="跑馬燈", **btn_config, command=self.toggle_marquee)
-
         self.func_buttons = [btn_all_on, btn_all_off, btn_invert, self.btn_marquee]
-
         for i, btn in enumerate(self.func_buttons):
-            self.func_frame.grid_columnconfigure(i, weight=1)  # 讓每個按鈕平分寬度
+            self.func_frame.grid_columnconfigure(i, weight=1)
             btn.grid(row=0, column=i, padx=5, sticky="ew")
-
         self.disable_buttons(self.func_buttons)
 
     def poll_hardware_status(self):
@@ -169,9 +193,7 @@ class LedControlApp:
     def handle_disconnection(self):
         if self.is_first_connection: return
         print("偵測到硬體斷開！")
-        if self.after_id_marquee:
-            self.root.after_cancel(self.after_id_marquee)
-            self.after_id_marquee = None
+        if self.after_id_marquee: self.root.after_cancel(self.after_id_marquee)
         self.is_first_connection = True
         self.hardware.disconnect()
         self.disable_buttons(self.buttons + self.func_buttons)
@@ -203,7 +225,6 @@ class LedControlApp:
         self._update_states_and_hardware([False] * config.NUM_LEDS)
 
     def restore_led_state(self):
-        print(f"從內部狀態恢復硬體顯示: {self.led_states}")
         self._update_states_and_hardware(self.led_states)
 
     def _execute_action(self, action):
@@ -230,8 +251,7 @@ class LedControlApp:
             self.start_marquee()
 
     def start_marquee(self):
-        print("啟動跑馬燈")
-        self.led_states_before_marquee = self.led_states.copy()
+        print("跑馬燈")
         self.marquee_running = True
         self.btn_marquee.configure(text="停止跑馬", fg_color=config.COLOR_MARQUEE_STOP,
                                    hover_color=config.COLOR_MARQUEE_STOP_HOVER)
@@ -244,9 +264,7 @@ class LedControlApp:
         if not self.marquee_running: return
         print("停止跑馬")
         self.marquee_running = False
-        if self.after_id_marquee:
-            self.root.after_cancel(self.after_id_marquee)
-            self.after_id_marquee = None
+        if self.after_id_marquee: self.root.after_cancel(self.after_id_marquee)
 
         last_states = [False] * config.NUM_LEDS
         last_pos = self.marquee_pos - self.marquee_dir
@@ -262,7 +280,6 @@ class LedControlApp:
 
     def run_marquee_frame(self):
         if not self.marquee_running or not self.hardware.is_connected(): return
-
         temp_states = [False] * config.NUM_LEDS
         temp_states[self.marquee_pos] = True
         try:
@@ -272,7 +289,6 @@ class LedControlApp:
                 text_color = "black" if state else "white"
                 hover_color = config.COLOR_LED_HOVER_ON if state else config.COLOR_LED_HOVER_OFF
                 self.buttons[i].configure(fg_color=color, text_color=text_color, hover_color=hover_color)
-
             if self.marquee_pos >= config.NUM_LEDS - 1 and self.marquee_dir == 1:
                 self.marquee_dir = -1
             elif self.marquee_pos <= 0 and self.marquee_dir == -1:
@@ -290,13 +306,46 @@ class LedControlApp:
             self.root.destroy()
 
 
-# --- 主程式啟動 ---
+# =============================================================================
+# 3. 主程式啟動入口
+#    加入了 Mutex 檢查以實現單例應用
+# =============================================================================
 if __name__ == "__main__":
     if sys.platform != "win32":
         messagebox.showerror("系統不支援", "此程式只能在 Windows 作業系統上運行。")
-    else:
-        ctk.set_appearance_mode(config.UI_THEME)
-        ctk.set_default_color_theme("blue")
-        root = ctk.CTk()
-        app = LedControlApp(root)
-        root.mainloop()
+        sys.exit()
+
+    # 建立一個唯一的 Mutex 名稱，確保所有實例都使用同一個名稱
+    # 這個 GUID 是隨機產生的，可以替換成任何你喜歡的唯一字串
+    mutex_name = "LEDControllerApp_Mutex_{c28f3435-9B2A-4f3d-8F3E-6B8E7A6B295A}"
+    mutex = None
+    try:
+        # 嘗試建立 Mutex
+        mutex = win32event.CreateMutex(None, False, mutex_name)
+
+        # 檢查上一個操作的錯誤碼
+        last_error = win32api.GetLastError()
+
+        # 如果錯誤碼是 ERROR_ALREADY_EXISTS，表示已有實例在運行
+        if last_error == winerror.ERROR_ALREADY_EXISTS:
+            print("偵測到程式已在執行中。")
+            # 建立一個臨時的根視窗來顯示通知
+            temp_root = tk.Tk()
+            temp_root.withdraw()  # 隱藏這個臨時的根視窗
+            ToastNotification("程式已在執行中...").mainloop()
+            sys.exit()
+
+        # 如果沒有錯誤，代表這是第一個實例，正常啟動主程式
+        else:
+            print("啟動主程式...")
+            ctk.set_appearance_mode(config.UI_THEME)
+            ctk.set_default_color_theme("blue")
+            root = ctk.CTk()
+            app = LedControlApp(root)
+            root.mainloop()
+
+    finally:
+        # 無論如何，程式結束時都要確保釋放 Mutex 句柄
+        if mutex:
+            win32api.CloseHandle(mutex)
+            print("Mutex 已釋放。")

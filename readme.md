@@ -2,7 +2,7 @@
 
 ## 專案簡介
 
-本專案程式碼由 2025/06/20 Google AI Studio 生成，使用 Windows 11 和 Python 32 bit 開發的專業級圖形化介面（GUI）應用程式，旨在透過特定的 USB I/O 硬體介面卡（使用 `USBIO4.DLL` 作為 COM 元件）來控制 16 個 LED。程式不僅提供了基礎的單點控制，還具備高度的穩定性和豐富的功能，包括斷線自動重連、狀態恢復、多種快捷操作及現代化的 UI 介面。當然還有優化的空間。
+本專案程式碼由 2025/07/12 Google AI Studio 生成，使用 Windows 11 和 Python 32 bit 開發的專業級圖形化介面（GUI）應用程式，旨在透過特定的 USB I/O 硬體介面卡（使用 `USBIO4.DLL` 作為 COM 元件）來控制 16 個 LED。程式不僅提供了基礎的單點控制，還具備高度的穩定性和豐富的功能，包括斷線自動重連、狀態恢復、多種快捷操作及現代化的 UI 介面。當然還有優化的空間。
 
 必用 python 32 bit 因為 USBIO4.dll 是 32 bit
 
@@ -123,9 +123,11 @@ python usbio4.py
 零件配置參考圖
 ![零件配置參考圖](./images/p32.png)
 
-材料表
-![材料表1](./images/p33.png)
-
 設備表
-![設備表1](./images/p34.png)
+![設備表1](./images/p33.png)
+
+材料表
+![材料表1](./images/p34.png)
 ![設備表2](./images/p35.png)
+
+
