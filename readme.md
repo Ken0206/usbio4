@@ -57,6 +57,7 @@ pip install customtkinter
 
 1.  **下載 Microsoft Visual C++ 2010 SP1 可轉散發套件 (x86)**。
     *   **下載連結**: [https://www.microsoft.com/zh-tw/download/details.aspx?id=26999](https://www.microsoft.com/zh-tw/download/details.aspx?id=26999)
+    *   本專案 dll 目錄內也有提供 `vcredist_x86.exe` , `USBIO4.dll`
     *   **注意**: 即使您的作業系統是 64 位元，也**必須**安裝 **x86 (32位元)** 版本，因為 `USBIO4.dll` 是 32 位元的。
 2.  執行下載的 `vcredist_x86.exe` 並完成安裝。
 3.  **建議**：安裝完成後，最好**重新啟動電腦**以確保系統環境完全更新。
