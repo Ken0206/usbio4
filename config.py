@@ -1,5 +1,5 @@
 # =================================================================
-# config.py - 專案設定檔 (v1.3)
+# config.py - 專案設定檔 (v1.4)
 # =================================================================
 
 # --- 主題設定 (dark, light, system) ---
@@ -23,13 +23,18 @@ PROG_ID = "Innovati.2"
 NUM_LEDS = 16
 
 # --- 程式行為設定 ---
-# 注意：這個版本的重連穩定性依賴於這個輪詢間隔，
-# 如果遇到問題，可以嘗試稍微加長這個時間。
-POLL_INTERVAL_MS = 2000 # 背景輪詢間隔（毫秒）
+# 背景輪詢間隔（毫秒），用於偵測硬體斷線與重連。
+POLL_INTERVAL_MS = 2000
 
+# 視窗預設尺寸
 WINDOW_DEFAULT_WIDTH = 350
 WINDOW_DEFAULT_HEIGHT = 180
 
 # --- 動畫效果設定 ---
 MARQUEE_SPEED_MS = 100
 RANDOM_FLICKER_DELAY_S = 0.1
+
+# 停止動畫時的行為設定:
+# True  = 回到動畫開始前的狀態 (Restore to state before animation)
+# False = 凍結在動畫的最後一幀 (Freeze at the last frame)
+RESTORE_STATE_ON_STOP = True
