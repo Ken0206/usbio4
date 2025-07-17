@@ -30,6 +30,12 @@ USB I/O 硬體介面卡為︰技術士技能檢定電腦硬體裝修職類乙級
     *   可透過 `config.py` 設定檔，自由選擇停止動畫時，LED 是**回到動畫前的狀態**還是**凍結在最後一幀畫面**。
 *   **單例應用程式**：透過 Windows 系統機制，防止使用者重複開啟多個程式視窗，確保系統中只有一個實例在運行。
 
+
+## 使用方法 1
+
+不需要安裝 Python 32bit 的方法，執行下面的 `第三步` 和 `第四步` ，再下載並執行 Releases 裡最新的 usbio4_vx.x_windows_x86.exe
+
+
 ## 環境設置與部署指南
 
 這是在一台**全新的 Windows 電腦**上成功運行此應用程式的**最終、最精簡**的步驟。
@@ -40,9 +46,7 @@ USB I/O 硬體介面卡為︰技術士技能檢定電腦硬體裝修職類乙級
 
 1.  前往 Python 官方網站下載頁面：[https://www.python.org/downloads/windows/](https://www.python.org/downloads/windows/)
 2.  尋找適用於 Windows 的最新 Python 版本，並務必選擇標示為 **"Windows installer (32-bit)"** 的安裝程式。
-3.  執行安裝程式時，在第一個畫面**務必勾選 `Add Python to PATH`** 選項，然後點擊 `Install Now`。
-
-![Add Python to PATH](https://docs.python.org/3/using/images/win-install-add-path.png)
+3.  執行安裝程式時，在第一個畫面**務必勾選 `Add Python to PATH`** 選項，然後點擊 `Install Now`。Add Python to PATH
 
 ### 第二步：安裝 Python 函式庫
 
@@ -92,8 +96,9 @@ pip install customtkinter
     python usbio4.py
     ```
 
-## 使用方法
 
+
+## 使用方法 2
 *   **程式啟動**：
     *   如果硬體已連接，狀態列會顯示綠色的「硬體已連接」。
     *   如果硬體未連接，狀態列會顯示「正在搜尋硬體...」。此時只需將硬體插入 USB 孔，程式便會自動偵測並轉為連接狀態。
